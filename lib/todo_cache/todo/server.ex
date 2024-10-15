@@ -1,38 +1,42 @@
 defmodule Todo.Server do
-  def start do
-    pid = spawn(fn -> loop(Todo.List.new()) end)
-    {:ok, pid}
-  end
+  use GenServer
 
-  def loop(todo_list) do
-    new_todo_list =
-      receive do
-        message -> process_message(todo_list, message)
-      end
-
-    loop(new_todo_list)
+  def start(name) do
+    GenServer.start(Todo.Server, name)
   end
 
   def add_entry(todo_server, new_entry) do
-    send(todo_server, {:add_entry, new_entry})
+    GenServer.cast(todo_server, {:add_entry, new_entry})
   end
 
   def entries(todo_server, date) do
-    send(todo_server, {:entries, self(), date})
-
-    receive do
-      {:todo_entries, entries} -> entries
-    after
-      5000 -> {:error, :timeout}
-    end
+    GenServer.call(todo_server, {:entries, date})
   end
 
-  defp process_message(todo_list, {:add_entry, new_entry}) do
-    Todo.List.add_entry(todo_list, new_entry)
+  @impl GenServer
+  def init(name) do
+    {:ok, {name, nil}, {:continue, :init}}
   end
 
-  defp process_message(todo_list, {:entries, caller, date}) do
-    send(caller, {:todo_entries, Todo.List.entries(todo_list, date)})
-    todo_list
+  @impl GenServer
+  def handle_continue(:init, {name, nil}) do
+    todo_list = Todo.Database.get(name) || Todo.List.new()
+    {:noreply, {name, todo_list}}
+  end
+
+  @impl GenServer
+  def handle_cast({:add_entry, new_entry}, {name, todo_list}) do
+    new_list = Todo.List.add_entry(todo_list, new_entry)
+    Todo.Database.store(name, new_list)
+    {:noreply, {name, new_list}}
+  end
+
+  @impl GenServer
+  def handle_call({:entries, date}, _, {name, todo_list}) do
+    {
+      :reply,
+      Todo.List.entries(todo_list, date),
+      {name, todo_list}
+    }
   end
 end

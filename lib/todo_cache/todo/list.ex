@@ -9,6 +9,10 @@ defmodule Todo.List do
     )
   end
 
+  def size(todo_list) do
+    map_size(todo_list.entries)
+  end
+
   def add_entry(todo_list, entry) do
     entry = Map.put(entry, :id, todo_list.next_id)
     new_entries = Map.put(todo_list.entries, todo_list.next_id, entry)
@@ -36,31 +40,5 @@ defmodule Todo.List do
 
   def delete_entry(todo_list, entry_id) do
     %Todo.List{todo_list | entries: Map.delete(todo_list.entries, entry_id)}
-  end
-end
-
-defmodule Todo.List.CsvImporter do
-  def import(file_name) do
-    file_name
-    |> read_lines
-    |> create_entries
-    |> Todo.List.new()
-  end
-
-  defp read_lines(file_name) do
-    file_name
-    |> File.stream!()
-    |> Stream.map(&String.trim_trailing(&1, "\n"))
-  end
-
-  defp create_entries(lines) do
-    Stream.map(
-      lines,
-      fn line ->
-        [date_string, title] = String.split(line, ",")
-        date = Date.from_iso8601!(date_string)
-        %{date: date, title: title}
-      end
-    )
   end
 end
