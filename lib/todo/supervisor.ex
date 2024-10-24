@@ -8,8 +8,21 @@ defmodule Todo.Supervisor do
   @impl true
   def init(_init_arg) do
     children = [
-      {Todo.Database, []},
-      {Todo.Cache, []}
+      %{
+        id: :process_registry,
+        start: {Todo.ProcessRegistry, :start_link, []},
+        type: :worker
+      },
+      %{
+        id: :database,
+        start: {Todo.Database, :start_link, []},
+        type: :supervisor
+      },
+      %{
+        id: :cache,
+        start: {Todo.Cache, :start_link, []},
+        type: :worker
+      }
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
