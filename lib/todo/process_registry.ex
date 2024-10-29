@@ -3,12 +3,24 @@ defmodule Todo.ProcessRegistry do
 
   use GenServer
 
+  def start_link() do
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  end
+
   def init(_) do
     {:ok, Map.new()}
   end
 
+  def register_name(key, pid) do
+    GenServer.call(__MODULE__, {:register_name, key, pid})
+  end
+
+  def whereis_name(key) do
+    GenServer.call(__MODULE__, {:whereis_name, key})
+  end
+
   def send(key, message) do
-    {_, response, _} = GenServer.call(self(), {:whereis_name, key})
+    response = whereis_name(key)
 
     case response do
       :undefined ->
@@ -44,6 +56,11 @@ defmodule Todo.ProcessRegistry do
   end
 
   defp deregister_pid(process_registry, pid) do
-    {:noreply, Map.pop(process_registry, pid, :not_found)}
+    process_registry
+    |> Enum.find(fn {_key, registered_pid} -> registered_pid == pid end)
+    |> case do
+      {key, _pid} -> Map.delete(process_registry, key)
+      nil -> process_registry
+    end
   end
 end

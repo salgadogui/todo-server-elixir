@@ -4,8 +4,8 @@ defmodule Todo.Database do
   @db_folder "./persist"
   @pool_size 3
 
-  def start_link(db_folder) do
-    Todo.PoolSupervisor.start_link(db_folder, @pool_size)
+  def start_link() do
+    Todo.PoolSupervisor.start_link(@db_folder, @pool_size)
   end
 
   def store(key, data) do
