@@ -16,6 +16,11 @@ defmodule Todo.Supervisor do
       %{
         id: :cache,
         start: {Todo.Cache, :start_link, []},
+        type: :supervisor
+      },
+      %{
+        id: :database,
+        start: {Todo.Database, :start_link, []},
         type: :worker
       }
     ]
